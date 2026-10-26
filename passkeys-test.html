@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#123b35">
+<title>اختبار Passkeys — ملعب الراكة</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;color:#17332d;background:#f2f7f5}
+*{box-sizing:border-box}body{margin:0;padding:22px;line-height:1.7}.wrap{max-width:620px;margin:30px auto}.card{background:#fff;border:1px solid #dce9e3;border-radius:22px;padding:24px;box-shadow:0 12px 35px #17332d0b}.brand{color:#126b5b;font-weight:800;font-size:14px}.title{font-size:25px;margin:8px 0}.muted{color:#60736d;font-size:14px}.status{padding:15px;border-radius:14px;background:#f3f7f6;margin:18px 0;border:1px solid #dce9e3}.status strong{display:block;margin-bottom:5px}.btn{width:100%;padding:14px;border:0;border-radius:13px;background:#126b5b;color:#fff;font:inherit;font-weight:800;cursor:pointer}.note{font-size:13px;color:#60736d;margin-top:18px}.pill{display:inline-block;padding:3px 9px;border-radius:20px;background:#e7f5ee;color:#17683b;font-size:12px;font-weight:800}
+</style>
+</head>
+<body>
+<main class="wrap"><section class="card">
+<div class="brand">⚽ ملعب جمعية الراكة</div><h1 class="title">اختبار دعم Face ID والبصمة</h1>
+<p class="muted">صفحة اختبار مستقلة. لا تغيّر تسجيل الدخول ولا تتصل بقاعدة البيانات.</p>
+<div class="status" id="support"><strong>حالة المتصفح</strong>جارٍ الفحص…</div>
+<div class="status" id="platform"><strong>قفل الجهاز (Face ID / بصمة)</strong>لم يتم الفحص بعد.</div>
+<button class="btn" id="check">إعادة الفحص</button>
+<p class="note"><span class="pill">اختبار آمن</span><br>هذه الصفحة تفحص دعم الجهاز فقط. لا تنشئ مفتاح دخول ولا تحفظ بيانات اعتماد. تفعيل Passkeys الحقيقي يحتاج تحدّيًا وتحققًا آمنًا من الخادم قبل استخدامه لتسجيل الدخول.</p>
+</section></main>
+<script>
+const support=document.getElementById('support');const platform=document.getElementById('platform');
+async function check(){support.innerHTML='<strong>حالة المتصفح</strong>جارٍ الفحص…';platform.innerHTML='<strong>قفل الجهاز (Face ID / بصمة)</strong>جارٍ الفحص…';
+if(!window.isSecureContext){support.innerHTML='<strong>حالة المتصفح</strong>يجب فتح الصفحة عبر HTTPS.';platform.innerHTML='<strong>قفل الجهاز (Face ID / بصمة)</strong>لم يتم الفحص لأن الاتصال ليس آمنًا.';return;}
+if(!window.PublicKeyCredential){support.innerHTML='<strong>حالة المتصفح</strong>هذا المتصفح لا يدعم WebAuthn / Passkeys.';platform.innerHTML='<strong>قفل الجهاز (Face ID / بصمة)</strong>غير متاح من هذا المتصفح.';return;}
+support.innerHTML='<strong>حالة المتصفح</strong>المتصفح يدعم WebAuthn / Passkeys.';
+try{const available=await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();platform.innerHTML='<strong>قفل الجهاز (Face ID / بصمة)</strong>'+(available?'الجهاز يبلّغ عن توفر وسيلة تحقق مدمجة.':'لم يؤكد الجهاز توفر وسيلة تحقق مدمجة؛ قد تختلف النتيجة حسب الجهاز والمتصفح والإعدادات.');}catch(e){platform.innerHTML='<strong>قفل الجهاز (Face ID / بصمة)</strong>تعذر التأكد آليًا؛ جرّب متصفحًا محدثًا واتصال HTTPS.';}}
+document.getElementById('check').addEventListener('click',check);check();
+</script></body></html>
