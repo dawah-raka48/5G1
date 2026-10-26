@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b6554"><title>تجربة دخول Passkeys — ملعب الراكة</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:22px;background:#eef4f1;color:#183b32;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.7}.wrap{max-width:540px;margin:30px auto}.card{background:#fff;border:1px solid #dce9e3;border-radius:25px;padding:24px;box-shadow:0 16px 45px #103c3012}.brand{color:#0b6554;font-weight:800}.title{font-size:25px;margin:8px 0 16px}.muted{color:#667b73;font-size:14px}.field{margin:16px 0}.field label{display:block;font-weight:750;margin-bottom:6px}.field input{width:100%;padding:14px;border:1px solid #d7e6df;border-radius:13px;font:inherit}.btn{width:100%;padding:14px;border:0;border-radius:14px;background:#0b6554;color:#fff;font:inherit;font-weight:800;margin-top:10px;cursor:pointer}.btn.secondary{background:#e5f2ec;color:#155345}.status{white-space:pre-wrap;padding:13px;border-radius:13px;background:#f3f7f5;border:1px solid #dce9e3;margin-top:16px}.warn{background:#fff6e5;border-color:#f0dfb6;color:#75510b;font-size:13px}.small{font-size:12px}.hidden{display:none}
+</style></head>
+<body><main class="wrap"><section class="card">
+<div class="brand">⚽ ملعب جمعية الراكة · نسخة 5G1</div><h1 class="title">تجربة تسجيل الدخول بمفتاح مرور</h1>
+<p class="muted">واجهة تجريبية منفصلة عن التطبيق الأساسي، لا تغيّر تسجيل الدخول الحالي.</p>
+<div class="field"><label for="username">اسم المستخدم التجريبي</label><input id="username" autocomplete="username" placeholder="اكتب اسمًا تجريبيًا"></div>
+<button id="register" class="btn">تجربة إنشاء مفتاح مرور على هذا الجهاز</button>
+<button id="authenticate" class="btn secondary">تجربة طلب التحقق بمفتاح المرور</button>
+<div id="status" class="status" role="status" aria-live="polite">جاهز للفحص.</div>
+<div class="status warn"><b>تنبيه مهم</b><br>هذه تجربة واجهة WebAuthn فقط. لا تحفظ المفتاح في حساب حقيقي ولا تمنح دخولًا للتطبيق؛ التحقق الآمن من التوقيع وربط المفتاح بالحساب يتطلب خادمًا يتحقق من تحدٍّ أصلي. لا تستخدمها لحماية بيانات حقيقية.</div>
+<p class="muted small">تعمل عادة عبر HTTPS وفي متصفح يدعم Passkeys. يمكنك استخدام اسم تجريبي فقط.</p>
+</section></main>
+<script>
+const $=id=>document.getElementById(id);
+const status=(s)=>$('status').textContent=s;
+const b64u=bytes=>{let s='';for(const b of new Uint8Array(bytes))s+=String.fromCharCode(b);return btoa(s).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'')};
+function randomBytes(n=32){const a=new Uint8Array(n);crypto.getRandomValues(a);return a}
+function check(){if(!window.isSecureContext)return 'افتح الصفحة عبر HTTPS.';if(!window.PublicKeyCredential)return 'المتصفح لا يدعم WebAuthn.';return ''}
+$('register').onclick=async()=>{try{const issue=check();if(issue)throw Error(issue);const username=$('username').value.trim();if(!username)throw Error('اكتب اسمًا تجريبيًا أولًا.');if(!PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable||!await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())throw Error('لم يؤكد الجهاز توفر Face ID/بصمة مدمجة.');const challenge=randomBytes();const userId=randomBytes(16);const credential=await navigator.credentials.create({publicKey:{challenge,rp:{name:'ملعب جمعية الراكة — تجربة'},user:{id:userId,name:username,displayName:username},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'preferred',userVerification:'required'},timeout:60000,attestation:'none'}});if(!credential)throw Error('لم يتم إنشاء مفتاح المرور.');sessionStorage.setItem('passkeysPrototypeCredentialId',b64u(credential.rawId));sessionStorage.setItem('passkeysPrototypeUser',username);status('نجحت تجربة إنشاء مفتاح مرور على الجهاز.\nالمعرّف: '+b64u(credential.rawId)+'\nهذا لا يفعّل دخولًا حقيقيًا ولا يربط المفتاح بحساب التطبيق.');}catch(e){status('لم تكتمل التجربة: '+(e.message||String(e)));}};
+$('authenticate').onclick=async()=>{try{const issue=check();if(issue)throw Error(issue);const id=sessionStorage.getItem('passkeysPrototypeCredentialId');if(!id)throw Error('أنشئ مفتاحًا تجريبيًا أولًا على هذا الجهاز.');const raw=Uint8Array.from(atob(id.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));const assertion=await navigator.credentials.get({publicKey:{challenge:randomBytes(),allowCredentials:[{type:'public-key',id:raw}],userVerification:'required',timeout:60000}});if(!assertion)throw Error('لم يكتمل التحقق.');status('استجاب الجهاز لمفتاح المرور بنجاح.\nلكن هذه الصفحة لا تتحقق من التوقيع على خادم، لذلك لا تعتبر ذلك تسجيل دخول آمنًا إلى التطبيق.');}catch(e){status('لم يكتمل التحقق: '+(e.message||String(e)));}};
+</script></body></html>
